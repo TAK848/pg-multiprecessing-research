@@ -27,6 +27,7 @@ class Conversion(models.Model):
     converted_at = models.DateTimeField(
         null=True,
     )
+    if_finished = models.BooleanField(default=False)
     progress = models.FloatField(
         default=0,
         validators=[MinValueValidator(0.0), MaxValueValidator(100.0)],

@@ -4,10 +4,12 @@ import os
 import uuid
 from time import sleep
 
-from config.tasks import add
+from celery import shared_task
+from celery.result import AsyncResult
+from config.tasks import add, execute_long_task
 from django.http import JsonResponse
 
-from .models import Conversion
+from research.models import Conversion
 
 mp.set_start_method('fork')
 
@@ -32,7 +34,6 @@ mp.set_start_method('fork')
 #     # p3.start()
 #     return 'a'
 
-
 def test_view(request):
     response = {}
     conversion = Conversion(input="今日は良い天気だ")
@@ -50,8 +51,16 @@ def test_view(request):
         args=[a],
     )
     print('process created')
-    p.start()
+    # p.start()
+    # print(add(1, 2))
+    task_id = add.delay(5, 10)
+    result = AsyncResult(task_id)
+    task_id2 = execute_long_task.delay(a)
+    # result2 = AsyncResult(task_id2)
 
+    print('result:', result, ' : ', result.state, ' : ', result.ready())
+
+    # response = {'result': result}
     print('process started')
     # print(create_another_process())
     # print('a')
@@ -64,7 +73,7 @@ def test_view(request):
     return JsonResponse(response)
 
 
-def execute_long_process(id):
+def execute_long_processx(id):
 
     print('プロセスに入った')
     # 元のプロセスから引き継いだ文字列を表示
@@ -92,3 +101,28 @@ def execute_long_process(id):
     #     sleep(5)
     #     print("変換が完了しました")
     #     f.write(f"id: {id}番，処理完了しました")
+
+
+@shared_task
+def execute_long_process(id):
+
+    print('プロセスに入った')
+    # 元のプロセスから引き継いだ文字列を表示
+    print(f'id: {id}')
+    print(Conversion.objects.all())
+    conversion = Conversion.objects.get(id=id)
+    print(conversion)
+    print(f"txt: {conversion.input}")
+
+    # プロセスIDを取得
+    pid = os.getpid()
+    print(f'今のprocessID: {pid}')
+    id = uuid.uuid4()
+    for i in range(1):
+        conversion.progress = i
+        # conversion.
+        sleep(1)
+    conversion.output = "本日は良い天気であります"
+    conversion.converted_at = datetime.datetime.now()
+    conversion.is_finished = True
+    conversion.save()
