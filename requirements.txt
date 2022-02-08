@@ -1,2 +1,7 @@
 Django~=4.0
 djangorestframework~=3.13
+celery
+django-celery-results
+redis
+django-redis
+django-celery-beat
