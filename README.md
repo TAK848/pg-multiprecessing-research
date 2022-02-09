@@ -19,3 +19,9 @@ redis-server
 ```bash
 DJANGO_SETTINGS_MODULE=config.settings celery -A config beat --scheduler django_celery_beat.schedulers:DatabaseScheduler --pidfile /tmp/celerybeat.pid
 ```
+
+ターミナル 4 つ目
+
+```bash
+bash -c "DJANGO_SETTINGS_MODULE=config.settings celery -A config worker"
+```
