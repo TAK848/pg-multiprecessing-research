@@ -25,3 +25,6 @@ DJANGO_SETTINGS_MODULE=config.settings celery -A config beat --scheduler django_
 ```bash
 bash -c "DJANGO_SETTINGS_MODULE=config.settings celery -A config worker"
 ```
+
+## 結果
+![](https://raw.githubusercontent.com/TAK848/pg-multiprecessing-research/main/result.gif)
