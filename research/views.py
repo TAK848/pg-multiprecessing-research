@@ -1,128 +1,58 @@
-import datetime
-import multiprocessing as mp
-import os
-import uuid
-from time import sleep
+from urllib import response
 
-from celery import shared_task
 from celery.result import AsyncResult
-from config.tasks import add, execute_long_task
+from config.tasks import execute_long_task
 from django.http import JsonResponse
+from django.shortcuts import render
 
 from research.models import Conversion
 
-mp.set_start_method('fork')
-
-
-# def create_another_process():
-
-#     # プロセスIDを取得
-#     pid = os.getpid()
-#     print('process1:' + str(pid))
-
-#     # サブプロセスを生成する
-#     p = mp.Process(target=execute_long_process, args=(
-#         "Message: call execute_anothoer_process()!", datetime.datetime.now()))
-#     # p2 = mp.Process(target=execute_anothoer_process, args=(
-#     #     "Message: call execute_anothoer_process()!",))
-#     # p3 = mp.Process(target=execute_anothoer_process, args=(
-#     #     "Message: call execute_anothoer_process()!",))
-
-#     # サブプロセスを開始する
-#     p.start()
-#     # p2.start()
-#     # p3.start()
-#     return 'a'
 
 def test_view(request):
-    response = {}
     conversion = Conversion(input="今日は良い天気だ")
     conversion.save()
-    print(conversion)
-    # プロセスIDを取得
-    pid = os.getpid()
-    print(f'今のprocessID: {pid}')
-    # サブプロセスを生成する
-    print(str(conversion.id))
-    a = str(conversion.id)
-    # a = "Message: asafsfa"
-    p = mp.Process(
-        target=execute_long_process,
-        args=[a],
-    )
-    print('process created')
-    # p.start()
-    # print(add(1, 2))
-    task_id = add.delay(5, 10)
+
+    task_id = execute_long_task.delay(conversion.id)
     result = AsyncResult(task_id)
-    task_id2 = execute_long_task.delay(a)
-    # result2 = AsyncResult(task_id2)
 
     print('result:', result, ' : ', result.state, ' : ', result.ready())
 
-    # response = {'result': result}
-    print('process started')
-    # print(create_another_process())
-    # print('a')
-    # print('a')
-    # conversion = Conversion.objects.get(id=a)
-    # print(conversion)
-    # print(f"txt: {conversion.input}")
+    response = {
+        'progress': conversion.progress,
+        'is_finished': conversion.is_finished,
+    }
     response['id'] = conversion.id
     response['input'] = conversion.input
+    response['output'] = conversion.output
+    response['new_url'] = f"{request.scheme}://{request.get_host()}/conversions/"
+    response['progress_url'] = f"{request.scheme}://{request.get_host()}/conversions/{conversion.id}/progress/"
+    response['detail_url'] = f"{request.scheme}://{request.get_host()}/conversions/{conversion.id}/"
+    return render(request, 'test.html', response)
     return JsonResponse(response)
 
 
-def execute_long_processx(id):
+def detail_view(request, pk):
+    conversion = Conversion.objects.get(id=pk)
 
-    print('プロセスに入った')
-    # 元のプロセスから引き継いだ文字列を表示
-    print(f'id: {id}')
-    print(Conversion.objects.all())
-    conversion = Conversion.objects.get(id=id)
-    print(conversion)
-    print(f"txt: {conversion.input}")
-
-    # プロセスIDを取得
-    pid = os.getpid()
-    print(f'今のprocessID: {pid}')
-    id = uuid.uuid4()
-    for i in range(1):
-        conversion.progress = i
-        # conversion.
-        sleep(1)
-    conversion.output = "本日は良い天気であります"
-    conversion.converted_at = datetime.datetime.now()
-    conversion.is_finished = True
-    conversion.save()
-    # with open("./sample.txt", mode='w') as f:
-    #     f.write(f"id: {id}番，処理開始します")
-    #     print("変換を開始しました")
-    #     sleep(5)
-    #     print("変換が完了しました")
-    #     f.write(f"id: {id}番，処理完了しました")
+    response = {
+        'progress': conversion.progress,
+        'is_finished': conversion.is_finished,
+    }
+    response['id'] = conversion.id
+    response['input'] = conversion.input
+    response['output'] = conversion.output
+    response['new_url'] = f"{request.scheme}://{request.get_host()}/conversions/"
+    response['progress_url'] = f"{request.scheme}://{request.get_host()}/conversions/{conversion.id}/progress/"
+    response['detail_url'] = f"{request.scheme}://{request.get_host()}/conversions/{conversion.id}/"
+    return render(request, 'result.html', response)
+    return JsonResponse(response)
 
 
-@shared_task
-def execute_long_process(id):
-
-    print('プロセスに入った')
-    # 元のプロセスから引き継いだ文字列を表示
-    print(f'id: {id}')
-    print(Conversion.objects.all())
-    conversion = Conversion.objects.get(id=id)
-    print(conversion)
-    print(f"txt: {conversion.input}")
-
-    # プロセスIDを取得
-    pid = os.getpid()
-    print(f'今のprocessID: {pid}')
-    id = uuid.uuid4()
-    for i in range(1):
-        conversion.progress = i
-        # conversion.
-        sleep(1)
-    conversion.output = "本日は良い天気であります"
-    conversion.converted_at = datetime.datetime.now()
-    conversion.is_finished = True
-    conversion.save()
+def progress_view(request, pk):
+    print(pk)
+    conversion = Conversion.objects.get(id=pk)
+    response = {
+        'progress': conversion.progress,
+        'is_finished': conversion.is_finished,
+    }
+    return JsonResponse(response)
